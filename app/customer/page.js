@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { db } from "../firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function CustomerPage() {
   const [pickup, setPickup] = useState("");
@@ -8,19 +10,24 @@ export default function CustomerPage() {
   const [distance, setDistance] = useState("");
   const [surge, setSurge] = useState(1);
   const [fare, setFare] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const BASE_FARE = 50; // Your new base fare
+  const BASE_FARE = 50;
   const PER_KM_RATE = 10;
 
-  const calculateFare = () => {
-    if (!distance) return;
+  const calculateFare = async () => {
+    if (!pickup || !dropoff || !distance) {
+      alert("Please fill all fields");
+      return;
+    }
 
-    // Automatic surge logic (example: busy hours simulation)
+    setLoading(true);
+
     const hour = new Date().getHours();
     let surgeMultiplier = 1;
 
     if (hour >= 17 && hour <= 20) {
-      surgeMultiplier = 1.5; // Evening rush
+      surgeMultiplier = 1.5;
     }
 
     setSurge(surgeMultiplier);
@@ -29,6 +36,27 @@ export default function CustomerPage() {
       (BASE_FARE + distance * PER_KM_RATE) * surgeMultiplier;
 
     setFare(total);
+
+    try {
+      await addDoc(collection(db, "bookings"), {
+        pickup,
+        dropoff,
+        distance,
+        baseFare: BASE_FARE,
+        perKmRate: PER_KM_RATE,
+        surge: surgeMultiplier,
+        totalFare: total,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+
+      alert("Booking saved successfully!");
+    } catch (error) {
+      console.error("Error saving booking:", error);
+      alert("Error saving booking");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -62,7 +90,7 @@ export default function CustomerPage() {
       />
 
       <button onClick={calculateFare} style={buttonStyle}>
-        Calculate Fare
+        {loading ? "Processing..." : "Calculate & Book"}
       </button>
 
       {fare && (
