@@ -33,7 +33,7 @@ export default function CustomerPage() {
     setSurge(surgeMultiplier);
 
     const total =
-      (BASE_FARE + distance * PER_KM_RATE) * surgeMultiplier;
+      (BASE_FARE + Number(distance) * PER_KM_RATE) * surgeMultiplier;
 
     setFare(total);
 
@@ -41,7 +41,7 @@ export default function CustomerPage() {
       await addDoc(collection(db, "bookings"), {
         pickup,
         dropoff,
-        distance,
+        distance: Number(distance),
         baseFare: BASE_FARE,
         perKmRate: PER_KM_RATE,
         surge: surgeMultiplier,
@@ -85,7 +85,7 @@ export default function CustomerPage() {
         type="number"
         placeholder="Distance (km)"
         value={distance}
-        onChange={(e) => setDistance(Number(e.target.value))}
+        onChange={(e) => setDistance(e.target.value)}
         style={inputStyle}
       />
 
@@ -93,7 +93,7 @@ export default function CustomerPage() {
         {loading ? "Processing..." : "Calculate & Book"}
       </button>
 
-      {fare && (
+      {fare !== null && (
         <div style={{ marginTop: "20px" }}>
           <p>Base Fare: GHS {BASE_FARE}</p>
           <p>Surge Multiplier: x{surge}</p>
