@@ -7,7 +7,8 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 export default function CustomerPage() {
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
-  const [distance, setDistance] = useState(0);
+  const [distance, setDistance] = useState("");
+  const [surge, setSurge] = useState(1);
   const [fare, setFare] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -15,19 +16,26 @@ export default function CustomerPage() {
   const PER_KM_RATE = 10;
 
   const calculateFare = async () => {
-    if (!pickup || !dropoff || distance <= 0) {
-      alert("Please fill all fields and enter a valid distance");
+    if (!pickup || !dropoff || !distance) {
+      alert("Please fill all fields");
       return;
     }
 
     setLoading(true);
 
-    // Determine surge multiplier based on current hour
     const hour = new Date().getHours();
-    const surgeMultiplier = hour >= 17 && hour <= 20 ? 1.5 : 1;
+    let surgeMultiplier = 1;
 
-    const totalFare = (BASE_FARE + distance * PER_KM_RATE) * surgeMultiplier;
-    setFare(totalFare);
+    if (hour >= 17 && hour <= 20) {
+      surgeMultiplier = 1.5;
+    }
+
+    setSurge(surgeMultiplier);
+
+    const total =
+      (BASE_FARE + distance * PER_KM_RATE) * surgeMultiplier;
+
+    setFare(total);
 
     try {
       await addDoc(collection(db, "bookings"), {
@@ -37,19 +45,15 @@ export default function CustomerPage() {
         baseFare: BASE_FARE,
         perKmRate: PER_KM_RATE,
         surge: surgeMultiplier,
-        totalFare,
+        totalFare: total,
         status: "pending",
         createdAt: serverTimestamp(),
       });
 
       alert("Booking saved successfully!");
-      // Optionally clear fields
-      setPickup("");
-      setDropoff("");
-      setDistance(0);
     } catch (error) {
       console.error("Error saving booking:", error);
-      alert("Error saving booking. Please try again.");
+      alert("Error saving booking");
     }
 
     setLoading(false);
@@ -83,30 +87,21 @@ export default function CustomerPage() {
         value={distance}
         onChange={(e) => setDistance(Number(e.target.value))}
         style={inputStyle}
-        min={0}
       />
 
       <button onClick={calculateFare} style={buttonStyle}>
         {loading ? "Processing..." : "Calculate & Book"}
       </button>
 
-      {fare !== null && (
+      {fare && (
         <div style={{ marginTop: "20px" }}>
           <p>Base Fare: GHS {BASE_FARE}</p>
-          <p>
-            Surge Multiplier: x
-            {new Date().getHours() >= 17 && new Date().getHours() <= 20
-              ? 1.5
-              : 1}
-          </p>
+          <p>Surge Multiplier: x{surge}</p>
           <h3>Total Fare: GHS {fare}</h3>
         </div>
       )}
 
-      <a
-        href="/"
-        style={{ display: "block", marginTop: "30px", color: "#D4A017" }}
-      >
+      <a href="/" style={{ display: "block", marginTop: "30px", color: "#D4A017" }}>
         ← Back to Home
       </a>
     </div>
@@ -118,7 +113,7 @@ const inputStyle = {
   padding: "10px",
   marginTop: "15px",
   borderRadius: "5px",
-  border: "1px solid #ccc",
+  border: "1px solid #ccc"
 };
 
 const buttonStyle = {
@@ -130,5 +125,5 @@ const buttonStyle = {
   border: "none",
   borderRadius: "5px",
   fontWeight: "bold",
-  cursor: "pointer",
+  cursor: "pointer"
 };
