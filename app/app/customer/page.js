@@ -5,17 +5,19 @@ import { useState } from "react";
 export default function CustomerPage() {
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
-  const [distance, setDistance] = useState("");
+  const [distance, setDistance] = useState(0);
   const [surge, setSurge] = useState(1);
   const [fare, setFare] = useState(null);
 
-  const BASE_FARE = 50; // Your new base fare
+  const BASE_FARE = 50;
   const PER_KM_RATE = 10;
 
   const calculateFare = () => {
-    if (!distance) return;
+    if (!pickup || !dropoff || distance <= 0) {
+      alert("Please fill all fields correctly");
+      return;
+    }
 
-    // Automatic surge logic (example: busy hours simulation)
     const hour = new Date().getHours();
     let surgeMultiplier = 1;
 
@@ -59,13 +61,14 @@ export default function CustomerPage() {
         value={distance}
         onChange={(e) => setDistance(Number(e.target.value))}
         style={inputStyle}
+        min="0"
       />
 
       <button onClick={calculateFare} style={buttonStyle}>
         Calculate Fare
       </button>
 
-      {fare && (
+      {fare !== null && (
         <div style={{ marginTop: "20px" }}>
           <p>Base Fare: GHS {BASE_FARE}</p>
           <p>Surge Multiplier: x{surge}</p>
@@ -73,7 +76,14 @@ export default function CustomerPage() {
         </div>
       )}
 
-      <a href="/" style={{ display: "block", marginTop: "30px", color: "#D4A017" }}>
+      <a
+        href="/"
+        style={{
+          display: "block",
+          marginTop: "30px",
+          color: "#D4A017",
+        }}
+      >
         ← Back to Home
       </a>
     </div>
@@ -85,7 +95,7 @@ const inputStyle = {
   padding: "10px",
   marginTop: "15px",
   borderRadius: "5px",
-  border: "1px solid #ccc"
+  border: "1px solid #ccc",
 };
 
 const buttonStyle = {
@@ -97,5 +107,5 @@ const buttonStyle = {
   border: "none",
   borderRadius: "5px",
   fontWeight: "bold",
-  cursor: "pointer"
+  cursor: "pointer",
 };
